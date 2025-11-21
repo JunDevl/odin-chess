@@ -15,13 +15,14 @@ class ChessSquare {
     [-2, 1], [-1, 2], [1, 2], [2, 1], 
     [2, -1], [1, -2], [-1, -2], [-2, -1]
   ]
-  readonly possibleMoves: [[number, number]] | null = null;
+  readonly possibleMoves: [[number, number]];
 
   predecessor: ChessSquare | null = null;
-  readonly position: [number, number] | null = null;
+  readonly position: [number, number];
 
   constructor(...position: [number, number]) {
     this.position = position;
+    this.possibleMoves = <unknown>[] as [[number, number]]
     const [posX, posY] = position;
 
     ChessSquare.discoveredSquares.set(`${posX}${posY}`, this);
@@ -32,21 +33,22 @@ class ChessSquare {
       if (ChessSquare.isImpossibleMove(position, move))
         continue;
 
-      if (this.possibleMoves) this.possibleMoves.push(position);
-      else this.possibleMoves = [position];
+      this.possibleMoves.push([moveX, moveY])
     }
   }
 }
 
 function shortestKnightPath(startPosition: [number, number], 
-                            endPosition: [number, number]): any {
+                            endPosition: [number, number]) {
 
   const initialSquare = new ChessSquare(...startPosition);
   const finalSquare = new ChessSquare(...endPosition);
 
-  const searchQueue = [finalSquare];
-  while (!searchQueue.includes(initialSquare)) {
-    const currentSquare = searchQueue.shift() as ChessSquare;
+  const searchQueue = new Queue({data: finalSquare});
+  while (searchQueue.last?.data !== initialSquare) {
+    const currentSquare = searchQueue.first?.data as ChessSquare;
+
+    searchQueue.dequeue();
 
     const [curX, curY] = currentSquare?.position as [number, number];
 
@@ -54,12 +56,22 @@ function shortestKnightPath(startPosition: [number, number],
       const [moveX, moveY] = possibleMove;
       const [nextX, nextY] = [curX + moveX, curY + moveY];
 
-      if (ChessSquare.isImpossibleMove(currentSquare?.position as [number, number], possibleMove)) continue;
-
       const nextSquare = ChessSquare.discoveredSquares.get(`${nextX}${nextY}`) ?? new ChessSquare(nextX, nextY);
+
       nextSquare.predecessor = currentSquare;
+
+      searchQueue.enqueue(nextSquare);
     }
   }
+
+  const path = [];
+  let nextSquare = initialSquare.predecessor;
+
+  do path.push(nextSquare)
+  while (nextSquare !== finalSquare)
+    nextSquare = nextSquare.predecessor;
+
+  return path;
 }
 
 console.log("Shortest path:");
