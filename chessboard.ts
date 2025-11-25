@@ -9,7 +9,12 @@ class ChessSquare {
     const [posX, posY] = position;
     const [moveX, moveY] = moveTo;
 
-    return (posX + moveX < 0 || posX + moveX > maxBoardWidth || posY + moveY < 0 || posY + moveY > maxBoardWidth);
+    const nextX = posX + moveX, nextY = posY + moveY;
+
+    return (nextX < 0 ||
+            nextX > maxBoardWidth ||
+            nextY < 0 ||
+            nextY > maxBoardWidth);
   }
   static readonly knightMoves = [
     [-2, 1], [-1, 2], [1, 2], [2, 1], 
@@ -44,9 +49,42 @@ function shortestKnightPath(startPosition: [number, number],
   const initialSquare = new ChessSquare(...startPosition);
   const finalSquare = new ChessSquare(...endPosition);
 
-  const searchQueue = new Queue({data: finalSquare});
-  while (searchQueue.last?.data !== initialSquare) {
-    const currentSquare = searchQueue.first?.data as ChessSquare;
+  const queue = [finalSquare];
+  while (!queue.includes(initialSquare)) {
+    const currentSquare = queue.shift();
+
+    if (!currentSquare) break;
+
+    for (let possibleMove of currentSquare.possibleMoves) {
+      const [curX, curY] = currentSquare.position;
+      const [moveX, moveY] = possibleMove;
+
+      const [nextX, nextY] = [curX + moveX, curY + moveY];
+
+      if (ChessSquare.discoveredSquares.has(`${nextX}${nextY}`)) continue;
+
+      const newSquare = new ChessSquare(curX + moveX, curY + moveY);
+
+      newSquare.predecessor = currentSquare;
+
+      queue.push(newSquare);
+    }
+  }
+  const path = [initialSquare]
+  while (!path.includes(finalSquare)) {
+    const nextSquare = path[path.length - 1].predecessor;
+    if (!nextSquare) continue;
+    path.push(nextSquare);
+  }
+  console.log(`The shortest path was ${path.length - 1} moves!`);
+  console.log("The moves were:");
+  path.forEach(square => console.log(square.position));
+
+  /* MY ATTEMPT, DIDN'T WORK...
+  while (!searchQueue.contains(initialSquare)) {
+    const currentSquare = searchQueue.first?.data;
+
+    if (!currentSquare) break;
 
     searchQueue.dequeue();
 
@@ -56,23 +94,35 @@ function shortestKnightPath(startPosition: [number, number],
       const [moveX, moveY] = possibleMove;
       const [nextX, nextY] = [curX + moveX, curY + moveY];
 
-      const nextSquare = ChessSquare.discoveredSquares.get(`${nextX}${nextY}`) ?? new ChessSquare(nextX, nextY);
+      let nextSquare: ChessSquare 
+      
+      if (ChessSquare.discoveredSquares.has(`${nextX}${nextY}`)) 
+        continue; 
+      
+      nextSquare = new ChessSquare(nextX, nextY);
+
+      if (nextSquare === finalSquare) continue;
 
       nextSquare.predecessor = currentSquare;
 
       searchQueue.enqueue(nextSquare);
     }
-  }
+  };
 
   const path = [];
-  let nextSquare = initialSquare.predecessor;
+  let nextSquare = initialSquare;
 
-  do path.push(nextSquare)
-  while (nextSquare !== finalSquare)
-    nextSquare = nextSquare.predecessor;
+  do {
+    path.push(nextSquare.position);
+    nextSquare = nextSquare!.predecessor!;
+  } while (nextSquare !== finalSquare);
+
+  path.push(finalSquare.position);
+  */
+  
 
   return path;
 }
 
 console.log("Shortest path:");
-console.log(shortestKnightPath([0, 0], [4, 2]));
+console.log(shortestKnightPath([4, 1], [6, 7]));

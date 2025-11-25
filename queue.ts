@@ -1,5 +1,3 @@
-type TrasverseReturnTypes = "index" | "value";
-
 export class Queue<T> {
   last: Vertex<T> | undefined;
   first: Vertex<T> | undefined;
@@ -15,24 +13,13 @@ export class Queue<T> {
     this.first = values[values.length - 1];
   }
 
-  #search(compareTo: TrasverseReturnTypes,
-          isEqual: (predicate: number | string) => boolean,
-          returnType?: TrasverseReturnTypes,
-          current: Vertex<T> | undefined = this.last, 
-          i: number = 0, 
-  ): Vertex<T> | string | number | undefined {
+  #search(target: T, current: Vertex<T> | undefined): T | undefined {
     if (!current) return;
-    if (compareTo === "index" && isEqual(i)) {
-      switch (returnType) {
-        case "index":
-          return i;
-        default: 
-          return current;
-      }
-    }
-    const increment = i + 1;
-    const next = current.next ?? undefined;
-    return this.#search(compareTo, isEqual, returnType, next, increment);
+    
+    if (current.data === target) return target;
+
+    const next = current.next;
+    return this.#search(target, next);
   }
 
   get Size() {return this.#size;}
@@ -76,6 +63,10 @@ export class Queue<T> {
     result += "null"
 
     return result;
+  };
+
+  contains(value: T): boolean {
+    return !!this.#search(value, this.last);
   };
 }
 
